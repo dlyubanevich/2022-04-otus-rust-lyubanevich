@@ -1,3 +1,6 @@
-# 2022-04-otus-rust-lyubanevich
+# Rust-developer by OTUS (2022-04)
 
-## Любаневич Дмитрий, Rust-developer.
+#### Репозиторий для проектов из курса Rust-developer от Otus.
+
+1. Homework #1 - Сломанный FizzBuzz.
+
