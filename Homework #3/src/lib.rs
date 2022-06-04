@@ -1,3 +1,3 @@
-mod devices;
-mod smarthome;
-mod info_provider;
+pub mod core;
+pub mod devices;
+pub mod provider;

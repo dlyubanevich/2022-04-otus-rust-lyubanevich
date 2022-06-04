@@ -1,3 +1,7 @@
-pub mod socket;
-pub mod thermometer;
-pub mod traits;
+mod socket;
+mod thermometer;
+mod traits;
+
+pub use socket::Socket;
+pub use thermometer::Thermometer;
+pub use traits::DeviceStatus;

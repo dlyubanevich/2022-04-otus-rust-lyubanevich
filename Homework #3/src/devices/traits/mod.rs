@@ -1,4 +1,3 @@
-
 pub trait DeviceStatus {
-      fn get_status(&self) -> &str;
+    fn get_status(&self) -> String;
 }

@@ -5,22 +5,25 @@ enum TemperatureUnit {
 }
 
 pub struct Thermometer {
-    description: String,
+    _description: String,
     temperature: TemperatureUnit,
 }
 impl Thermometer {
     pub fn new(description: &str) -> Self {
-        Thermometer{
-            description: description.to_string(),
-            temperature: TemperatureUnit::Celcium(0_f32)    
-        }    
+        Thermometer {
+            _description: description.to_string(),
+            temperature: TemperatureUnit::Celcium(0_f32),
+        }
     }
     pub fn get_temperature(&self) -> f32 {
-        todo!("Not implemented yet");
+        match self.temperature {
+            TemperatureUnit::Celcium(value) => value,
+        }
     }
 }
 impl DeviceStatus for Thermometer {
-    fn get_status(&self) -> &str {
-        self.description.as_str()
+    fn get_status(&self) -> String {
+        let status = self.get_temperature();
+        format!("Thermometer shows {status} degrees")
     }
 }
