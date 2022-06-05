@@ -1,4 +1,4 @@
-use smart_home::core::{Room, SmartHome};
+use smart_home::core::SmartHome;
 use smart_home::devices::Socket;
 use smart_home::provider::{DeviceInfoProvider, DeviceType};
 
@@ -7,15 +7,13 @@ fn main() {
     let device_socket_name = "Socket";
     let device_thermometer_name = "Thermometer";
 
-    let mut bedroom = Room::new(room_name);
-    bedroom.add_device(device_socket_name);
-    bedroom.add_device(device_thermometer_name);
-
     let mut smart_home = SmartHome::new("My home");
-    smart_home.add_room(bedroom);
 
-    let mut socket = Socket::new(device_socket_name);
-    socket.switch_off();
+    smart_home.add_room(room_name);
+    smart_home.add_device(room_name, device_socket_name);
+    smart_home.add_device(room_name, device_thermometer_name);
+
+    let socket = Socket::new(device_socket_name);
 
     let mut info_provider = DeviceInfoProvider::default();
     info_provider.add_device(room_name, device_socket_name, DeviceType::Socket(&socket));
