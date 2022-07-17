@@ -4,6 +4,8 @@ use std::{
     time::Duration,
 };
 
+use crate::network::udp::protocol;
+
 pub struct UdpServer {
     socket: UdpSocket,
 }
@@ -14,9 +16,7 @@ impl UdpServer {
         socket.set_read_timeout(Some(Duration::from_secs(1)))?;
         Ok(Self { socket })
     }
-    pub fn get_message(&self) -> Result<[u8; 4], Box<dyn Error>> {
-        let mut buffer = [0; 4];
-        self.socket.recv(&mut buffer)?;
-        Ok(buffer)
+    pub fn get_message(&self) -> Result<f32, Box<dyn Error>> {
+        protocol::receive_f32(&self.socket)
     }
 }

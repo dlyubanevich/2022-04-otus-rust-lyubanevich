@@ -1,5 +1,5 @@
+use crate::network::common::types::{ConnectionResult, RequestResult};
 use crate::network::tcp::protocol;
-use crate::network::tcp::types::{ConnectionResult, RequestResult};
 use std::net::{TcpStream, ToSocketAddrs};
 
 pub struct TcpClient {
@@ -14,7 +14,7 @@ impl TcpClient {
         Ok(Self { stream })
     }
 
-    pub fn send_request<R: AsRef<str>>(&mut self, request: R) -> RequestResult {
+    pub fn send_request<R: AsRef<str>>(&mut self, request: R) -> RequestResult<String> {
         protocol::send_string(&mut self.stream, request)?;
         let response = protocol::receive_string(&mut self.stream)?;
         Ok(response)

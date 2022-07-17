@@ -36,10 +36,7 @@ impl ThermometerUdpClient {
             }
 
             match socket.get_message() {
-                Ok(message) => {
-                    let value = f32::from_be_bytes(message);
-                    thermometer.lock().unwrap().set_temperature(value)
-                }
+                Ok(value) => thermometer.lock().unwrap().set_temperature(value),
                 Err(error) => println!("Can't receive message: {error}"),
             }
         });

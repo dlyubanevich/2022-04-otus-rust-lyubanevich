@@ -1,5 +1,5 @@
-use crate::network::tcp::errors::ReceiveError;
-use crate::network::tcp::types::{ReceiveResult, SendResult};
+use crate::network::common::errors::ReceiveError;
+use crate::network::common::types::{ReceiveResult, SendResult};
 use std::io::{Read, Write};
 
 pub fn send_string<W: Write, D: AsRef<str>>(mut writer: W, data: D) -> SendResult {
@@ -11,7 +11,7 @@ pub fn send_string<W: Write, D: AsRef<str>>(mut writer: W, data: D) -> SendResul
     Ok(())
 }
 
-pub fn receive_string<R: Read>(mut reader: R) -> ReceiveResult {
+pub fn receive_string<R: Read>(mut reader: R) -> ReceiveResult<String> {
     let mut buf = [0; 4];
     reader.read_exact(&mut buf)?;
     let len = u32::from_be_bytes(buf);

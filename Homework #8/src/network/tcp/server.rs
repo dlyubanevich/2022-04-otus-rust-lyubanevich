@@ -1,6 +1,6 @@
-use crate::network::tcp::connections::Connection;
-use crate::network::tcp::errors::ConnectionError;
-use crate::network::tcp::types::{BindResult, ConnectionResult};
+use crate::network::common::errors::ConnectionError;
+use crate::network::common::types::{BindResult, ConnectionResult};
+use crate::network::tcp::connection::Connection;
 use std::net::{TcpListener, ToSocketAddrs};
 
 pub struct TcpServer {

@@ -1,5 +1,5 @@
+use crate::network::common::types::{ReceiveResult, SendResult};
 use crate::network::tcp::protocol;
-use crate::network::tcp::types::{ReceiveResult, SendResult};
 use std::net::TcpStream;
 
 pub struct Connection {
@@ -10,7 +10,7 @@ impl Connection {
     pub fn new(stream: TcpStream) -> Self {
         Self { stream }
     }
-    pub fn receive_request(&mut self) -> ReceiveResult {
+    pub fn receive_request(&mut self) -> ReceiveResult<String> {
         protocol::receive_string(&mut self.stream)
     }
 

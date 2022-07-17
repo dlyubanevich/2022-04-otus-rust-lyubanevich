@@ -3,6 +3,8 @@ use std::{
     net::{ToSocketAddrs, UdpSocket},
 };
 
+use crate::network::udp::protocol;
+
 pub struct UdpClient {
     socket: UdpSocket,
 }
@@ -17,8 +19,7 @@ impl UdpClient {
         address: impl ToSocketAddrs,
         message: f32,
     ) -> Result<(), Box<dyn Error>> {
-        let buffer = f32::to_be_bytes(message);
-        self.socket.send_to(&buffer, address)?;
+        protocol::send_f32(&self.socket, address, message)?;
         Ok(())
     }
 }
