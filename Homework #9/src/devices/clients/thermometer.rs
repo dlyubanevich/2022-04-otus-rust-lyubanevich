@@ -1,11 +1,10 @@
 use std::{
     error::Error,
-    net::ToSocketAddrs,
     sync::{Arc, Mutex},
-    thread,
 };
 
 use crate::{devices::Thermometer, network::UdpServer};
+use tokio::net::ToSocketAddrs;
 
 pub struct ThermometerUdpClient {
     thermometer: Arc<Mutex<Thermometer>>,
@@ -13,31 +12,33 @@ pub struct ThermometerUdpClient {
 }
 
 impl ThermometerUdpClient {
-    pub fn new(
+    pub async fn new(
         thermometer: Thermometer,
         address: impl ToSocketAddrs,
     ) -> Result<Self, Box<dyn Error>> {
         let thermometer = Arc::new(Mutex::new(thermometer));
         let state = Arc::new(Mutex::new(State::Running));
-        let socket = UdpServer::new(address)?;
-        Self::run_measuring(socket, Arc::clone(&thermometer), Arc::clone(&state));
+        let socket = UdpServer::new(address).await?;
+        Self::run_measuring(socket, Arc::clone(&thermometer), Arc::clone(&state)).await;
 
         Ok(Self { thermometer, state })
     }
 
-    fn run_measuring(
+    async fn run_measuring(
         socket: UdpServer,
         thermometer: Arc<Mutex<Thermometer>>,
         state: Arc<Mutex<State>>,
     ) {
-        thread::spawn(move || loop {
-            if let State::Stopped = *state.lock().unwrap() {
-                return;
-            }
+        tokio::spawn(async move {
+            loop {
+                if let State::Stopped = *state.lock().unwrap() {
+                    return;
+                }
 
-            match socket.get_message() {
-                Ok(value) => thermometer.lock().unwrap().set_temperature(value),
-                Err(error) => println!("Can't receive message: {error}"),
+                match socket.get_message().await {
+                    Ok(value) => thermometer.lock().unwrap().set_temperature(value),
+                    Err(error) => println!("Can't receive message: {error}"),
+                }
             }
         });
     }

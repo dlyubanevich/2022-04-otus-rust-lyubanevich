@@ -5,15 +5,16 @@ use std::{
 
 use smart_home::network::UdpClient;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bind_address = "127.0.0.1:34255";
     let receiver_address = "127.0.0.1:34254";
-    let socket_client = UdpClient::new(bind_address)?;
+    let socket_client = UdpClient::new(bind_address).await?;
     let generator = TemperatureGenerator::default();
     for _ in 0..12 {
         thread::sleep(Duration::from_secs(1));
         let message = generator.generate();
-        if let Err(error) = socket_client.send_message(receiver_address, message) {
+        if let Err(error) = socket_client.send_message(receiver_address, message).await {
             println!("can't send temperature: {error}")
         }
     }

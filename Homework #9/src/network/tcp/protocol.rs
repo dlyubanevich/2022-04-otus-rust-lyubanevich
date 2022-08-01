@@ -28,7 +28,6 @@ async fn write_all(stream: &TcpStream, buffer: &[u8]) -> io::Result<()> {
     while written < buffer.len() {
         stream.writable().await?;
         match stream.try_write(&buffer[written..]) {
-            Ok(0) => break,
             Ok(n) => written += n,
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {}
             Err(error) => return Err(error),
@@ -43,7 +42,6 @@ async fn read_exact(stream: &TcpStream, buffer: &mut [u8]) -> io::Result<()> {
     while readed < buffer.len() {
         stream.readable().await?;
         match stream.try_read(&mut buffer[readed..]) {
-            Ok(0) => break,
             Ok(n) => readed += n,
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {}
             Err(error) => return Err(error),
