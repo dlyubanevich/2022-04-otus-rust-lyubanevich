@@ -23,7 +23,7 @@ impl Storage {
     }
     fn info(&self) {
         self.devices.iter().for_each(|device| {
-            let result = self.visit(device);
+            let result = self.visit(device.as_ref());
             println!("{}", result);
         });
     }
@@ -54,13 +54,13 @@ impl Data for Thermometer {
 trait Visitor {
     type Result;
 
-    fn visit(&self, data: &Box<dyn Data>) -> Self::Result;
+    fn visit(&self, data: &dyn Data) -> Self::Result;
 }
 
 impl Visitor for Storage {
     type Result = String;
 
-    fn visit(&self, data: &Box<dyn Data>) -> Self::Result {
+    fn visit(&self, data: &dyn Data) -> Self::Result {
         data.get_data()
     }
 }
