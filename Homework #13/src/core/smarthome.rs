@@ -1,91 +1,91 @@
 use crate::core::errors::SmartHomeErrors;
-use crate::core::traits::SmartHomeProvider;
-use crate::database::DatabaseRepository;
 use std::collections::HashMap;
 
-use crate::core::{Device, Room};
+use crate::core::room::Room;
 use crate::provider::InfoProvider;
 
 const SEPARATOR: &str = "\n";
 
-pub struct SmartHome<R: DatabaseRepository> {
+pub struct SmartHome {
     name: String,
-    repository: R,
+    rooms: HashMap<String, Room>,
 }
 
-impl<R: DatabaseRepository> SmartHome<R> {
-    pub fn bulder(name: &str) -> SmartHomeBuilder<R> {
+impl SmartHome {
+    pub fn bulder() -> SmartHomeBuilder {
         SmartHomeBuilder {
-            name: name.to_string(),
-            repository: None,
+            name: String::new(),
         }
     }
-}
-
-pub struct SmartHomeBuilder<R: DatabaseRepository> {
-    name: String,
-    repository: Option<R>,
-}
-impl<R: DatabaseRepository> SmartHomeBuilder<R> {
-    pub fn with_repository(mut self, repository: R) -> Self {
-        self.repository = Some(repository);
-        self
-    }
-    pub fn build(self) -> SmartHome<R> {
-        SmartHome {
-            name: self.name,
-            repository: self.repository.unwrap(),
+    pub fn add_room(&mut self, room_name: &str) {
+        if !self.room_exiest(room_name) {
+            self.rooms
+                .insert(room_name.to_string(), Room::new(room_name));
         }
     }
-}
-
-impl<R: DatabaseRepository> SmartHomeProvider for SmartHome<R> {
-    fn add_room(&mut self, room_name: &str) -> u32 {
-        let result = self.repository.add_room(room_name);
-        result.unwrap()
-    }
-
-    fn delete_room(&mut self, room_id: u32) -> Result<(), SmartHomeErrors> {
-        self.repository.delete_room(room_id);
+    pub fn delete_room(&mut self, room_name: &str) -> Result<(), SmartHomeErrors> {
+        if self.rooms.remove(room_name).is_none() {
+            return Err(SmartHomeErrors::RoomNotFound(room_name.to_string()));
+        }
         Ok(())
     }
-    //TODO unwrap
-    fn add_device(&mut self, room_id: u32, device_name: &str) -> u32 {
-        let result = self.repository.add_device(room_id, device_name);
-        result.unwrap()
+    pub fn add_device(&mut self, room_name: &str, device_name: &str) {
+        if let Some(room) = self.rooms.get_mut(room_name) {
+            room.add_device(device_name);
+        } else {
+            let mut room = Room::new(room_name);
+            room.add_device(device_name);
+            self.rooms.insert(room_name.to_string(), room);
+        }
     }
-
-    fn delete_device(&mut self, room_id: u32, device_id: u32) -> Result<(), SmartHomeErrors> {
-        self.repository.delete_device(room_id, device_id);
+    pub fn delete_device(
+        &mut self,
+        room_name: &str,
+        device_name: &str,
+    ) -> Result<(), SmartHomeErrors> {
+        if let Some(device_is_deleted) = self
+            .rooms
+            .get_mut(room_name)
+            .map(|room| room.delete_device(device_name))
+        {
+            if !device_is_deleted {
+                return Err(SmartHomeErrors::DeviceNotFound(
+                    room_name.to_string(),
+                    device_name.to_string(),
+                ));
+            }
+        }
         Ok(())
     }
-
-    fn get_rooms(&self) -> Vec<Room> {
-        self.repository
-            .get_rooms()
-            .into_iter()
-            .map(|dto| Room::new(dto.id, &dto.name))
-            .collect()
+    pub fn get_rooms(&self) -> Vec<&Room> {
+        self.rooms.values().collect()
     }
-
-    fn get_devices(&self, room_id: u32) -> Vec<Device> {
-        self.repository
-            .get_devices(room_id)
-            .into_iter()
-            .map(|dto| Device::new(dto.id, &dto.name))
-            .collect()
+    pub fn get_devices(&self, room_name: &str) -> Option<Vec<&String>> {
+        let room = self.rooms.get(room_name);
+        room.map(|room| room.get_devices())
     }
-
-    fn create_report<T: InfoProvider>(&self, info_provider: &T) -> String {
+    pub fn room_exiest(&self, room_name: &str) -> bool {
+        self.rooms.contains_key(room_name)
+    }
+    pub fn device_exiest(&self, room_name: &str, device_name: &str) -> bool {
+        match self.rooms.get(room_name) {
+            Some(room) => room
+                .get_devices()
+                .into_iter()
+                .any(|item| device_name == item.as_str()),
+            None => false,
+        }
+    }
+    pub fn create_report<T: InfoProvider>(&self, info_provider: &T) -> String {
         let mut report = Vec::new();
         let header = format!("Smart home [{}]:", &self.name);
         report.push(header);
 
         for room in self.get_rooms() {
-            let room_name = &room.name;
-            let devices = self.get_devices(room.id);
-            for device in devices {
-                let result = info_provider.get_device_report(room_name, &device.name);
+            let room_name = room.get_name();
+            let devices = room.get_devices();
+            for device_name in devices {
+                let result = info_provider.get_device_report(room_name, device_name);
                 report.push(result);
             }
         }
@@ -94,55 +94,19 @@ impl<R: DatabaseRepository> SmartHomeProvider for SmartHome<R> {
     }
 }
 
-//TODO Po umolchaniyu ispolzovat etot repository
-#[derive(Default)]
-struct HashMapRepository {
-    room_storage: HashMap<String, String>,
-    device_storage: HashMap<String, String>,
+pub struct SmartHomeBuilder {
+    name: String,
 }
-
-impl DatabaseRepository for HashMapRepository {
-    fn room_exiest(&self, room_name: &str) -> bool {
-        todo!()
+impl SmartHomeBuilder {
+    pub fn with_name(mut self, name: &str) -> Self {
+        self.name.push_str(name);
+        self
     }
-
-    fn add_room(
-        &mut self,
-        room_name: &str,
-    ) -> Result<u32, crate::database::errors::DatabaseErrors> {
-        todo!()
-    }
-
-    fn delete_room(&self, room_id: u32) -> Result<(), crate::database::errors::DatabaseErrors> {
-        todo!()
-    }
-
-    fn get_rooms(&self) -> Vec<crate::database::models::RoomDTO> {
-        todo!()
-    }
-
-    fn device_exiest(&self, room_id: u32, device_name: &str) -> bool {
-        todo!()
-    }
-
-    fn add_device(
-        &mut self,
-        room_id: u32,
-        device_name: &str,
-    ) -> Result<u32, crate::database::errors::DatabaseErrors> {
-        todo!()
-    }
-
-    fn delete_device(
-        &mut self,
-        room_id: u32,
-        device_id: u32,
-    ) -> Result<(), crate::database::errors::DatabaseErrors> {
-        todo!()
-    }
-
-    fn get_devices(&self, room_id: u32) -> Vec<crate::database::models::DeviceDTO> {
-        todo!()
+    pub fn build(self) -> SmartHome {
+        SmartHome {
+            name: self.name,
+            rooms: HashMap::new(),
+        }
     }
 }
 
@@ -150,31 +114,31 @@ impl DatabaseRepository for HashMapRepository {
 mod tests {
     use super::*;
 
-    //     #[test]
-    //     fn should_add_and_delete_rooms() {
-    //         let home_name = "My home";
-    //         let room_name = "Bedroom";
+    #[test]
+    fn should_add_and_delete_rooms() {
+        let home_name = "My home";
+        let room_name = "Bedroom";
 
-    //         let mut smart_home = SmartHome::bulder(home_name).build();
-    //         smart_home.add_room(room_name);
-    //         assert_eq!(smart_home.get_rooms().len(), 1);
-    //         let result = smart_home.delete_room(room_name);
-    //         assert!(result.is_ok());
-    //         let result = smart_home.delete_room(room_name);
-    //         assert!(result.is_err());
-    //     }
+        let mut smart_home = SmartHome::bulder().with_name(home_name).build();
+        smart_home.add_room(room_name);
+        assert_eq!(smart_home.get_rooms().len(), 1);
+        let result = smart_home.delete_room(room_name);
+        assert!(result.is_ok());
+        let result = smart_home.delete_room(room_name);
+        assert!(result.is_err());
+    }
 
-    //     #[test]
-    //     fn should_add_and_delete_devices() {
-    //         let home_name = "My home";
-    //         let device_name = "Socket";
-    //         let room_name = "Bedroom";
+    #[test]
+    fn should_add_and_delete_devices() {
+        let home_name = "My home";
+        let device_name = "Socket";
+        let room_name = "Bedroom";
 
-    //         let mut smart_home = SmartHome::bulder(home_name).build();
-    //         smart_home.add_device(room_name, device_name);
-    //         let result = smart_home.delete_device(room_name, device_name);
-    //         assert!(result.is_ok());
-    //         let result = smart_home.delete_device(room_name, device_name);
-    //         assert!(result.is_err());
-    //     }
+        let mut smart_home = SmartHome::bulder().with_name(home_name).build();
+        smart_home.add_device(room_name, device_name);
+        let result = smart_home.delete_device(room_name, device_name);
+        assert!(result.is_ok());
+        let result = smart_home.delete_device(room_name, device_name);
+        assert!(result.is_err());
+    }
 }

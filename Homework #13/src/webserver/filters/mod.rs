@@ -1,14 +1,11 @@
 use std::sync::Arc;
 
-use crate::core::SmartHome;
-use crate::database::SqliteRepository;
-use crate::provider::DeviceInfoProvider;
 use crate::webserver::handlers;
 use crate::webserver::models::{Device, RequestHandler, Room};
 use tokio::sync::Mutex;
 use warp::Filter;
 
-pub type Repository = Arc<Mutex<RequestHandler<SmartHome<SqliteRepository>, DeviceInfoProvider>>>;
+type Repository = Arc<Mutex<RequestHandler>>;
 
 pub fn api(
     repository: Repository,
@@ -42,7 +39,7 @@ fn rooms_create(
 fn rooms_delete(
     repository: Repository,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("rooms" / u32)
+    warp::path!("rooms" / String)
         .and(warp::delete())
         .and(with_repository(repository))
         .and_then(handlers::delete_room)
@@ -50,8 +47,7 @@ fn rooms_delete(
 fn device_list(
     repository: Repository,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("rooms" / u32)
-        .and(warp::path!("devices"))
+    warp::path!("rooms" / String / "devices")
         .and(warp::get())
         .and(with_repository(repository))
         .and_then(handlers::list_devices)
@@ -59,8 +55,7 @@ fn device_list(
 fn device_create(
     repository: Repository,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("rooms" / u32)
-        .and(warp::path!("devices"))
+    warp::path!("rooms" / String / "devices")
         .and(warp::post())
         .and(json_device_body())
         .and(with_repository(repository))
@@ -69,8 +64,7 @@ fn device_create(
 fn device_delete(
     repository: Repository,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    warp::path!("rooms" / u32)
-        .and(warp::path!("devices" / u32))
+    warp::path!("rooms" / String / "devices" / String)
         .and(warp::delete())
         .and(with_repository(repository))
         .and_then(handlers::delete_device)

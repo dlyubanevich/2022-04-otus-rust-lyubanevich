@@ -1,7 +1,5 @@
 pub mod errors;
 pub mod models;
-mod sqlite;
-mod traits;
+mod repository;
 
-pub use sqlite::SqliteRepository;
-pub use traits::DatabaseRepository;
+pub use repository::SqliteRepository;
