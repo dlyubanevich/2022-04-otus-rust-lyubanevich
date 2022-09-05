@@ -2,12 +2,15 @@ use iced::{
     button, Alignment, Button, Column, Container, Element, Length, Sandbox, Settings, Text,
 };
 use smart_home::network::TcpClient;
+use dotenv::dotenv;
 
 const CONNECTION_NOT_FOUND: &str = "Connection not found!";
 const CONNECTION_SUCCESSFUL: &str = "Connection is successful!";
 const SOCKET_ALREADY_CONNECT: &str = "Socket is already connect!";
 
 fn main() -> iced::Result {
+    dotenv().ok();
+
     SocketGui::run(Settings {
         window: iced::window::Settings {
             size: (350, 350),
@@ -53,7 +56,8 @@ impl Sandbox for SocketGui {
         match message {
             Message::Connect => {
                 if self.client.is_none() {
-                    match TcpClient::connect("127.0.0.1:8080") {
+                    let address = std::env::var("TCP_ADDRESS").unwrap();
+                    match TcpClient::connect(address) {
                         Ok(client) => {
                             self.client = Some(client);
                             self.text = String::from(CONNECTION_SUCCESSFUL);
